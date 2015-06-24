@@ -1,8 +1,9 @@
 <?php namespace Illuminate\Cookie;
 
 use Symfony\Component\HttpFoundation\Cookie;
+use Illuminate\Contracts\Cookie\QueueingFactory as JarContract;
 
-class CookieJar {
+class CookieJar implements JarContract {
 
 	/**
 	 * The default path (if specified).
@@ -155,7 +156,7 @@ class CookieJar {
 	}
 
 	/**
-	 * Get the cookies which have been queued for the next request
+	 * Get the cookies which have been queued for the next request.
 	 *
 	 * @return array
 	 */

@@ -1,6 +1,8 @@
 <?php namespace Illuminate\Auth;
 
-class GenericUser implements UserInterface {
+use Illuminate\Contracts\Auth\Authenticatable as UserContract;
+
+class GenericUser implements UserContract {
 
 	/**
 	 * All of the user's attributes.
@@ -41,7 +43,7 @@ class GenericUser implements UserInterface {
 	}
 
 	/**
-	 * Get the token value for the "remember me" session.
+	 * Get the "remember me" token value.
 	 *
 	 * @return string
 	 */
@@ -51,7 +53,7 @@ class GenericUser implements UserInterface {
 	}
 
 	/**
-	 * Set the token value for the "remember me" session.
+	 * Set the "remember me" token value.
 	 *
 	 * @param  string  $value
 	 * @return void
@@ -86,7 +88,7 @@ class GenericUser implements UserInterface {
 	 * Dynamically set an attribute on the user.
 	 *
 	 * @param  string  $key
-	 * @param  mixed   $value
+	 * @param  mixed  $value
 	 * @return void
 	 */
 	public function __set($key, $value)

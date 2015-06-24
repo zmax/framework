@@ -1,8 +1,10 @@
 <?php namespace Illuminate\Redis;
 
+use Closure;
 use Predis\Client;
+use Illuminate\Contracts\Redis\Database as DatabaseContract;
 
-class Database {
+class Database implements DatabaseContract {
 
 	/**
 	 * The host address of the database.
@@ -39,7 +41,9 @@ class Database {
 	{
 		$servers = array_except($servers, array('cluster'));
 
-		return array('default' => new Client(array_values($servers)));
+		$options = $this->getClientOptions($servers);
+
+		return array('default' => new Client(array_values($servers), $options));
 	}
 
 	/**
@@ -52,12 +56,25 @@ class Database {
 	{
 		$clients = array();
 
+		$options = $this->getClientOptions($servers);
+
 		foreach ($servers as $key => $server)
 		{
-			$clients[$key] = new Client($server);
+			$clients[$key] = new Client($server, $options);
 		}
 
 		return $clients;
+	}
+
+	/**
+	 * Get any client options from the configuration array.
+	 *
+	 * @param  array  $servers
+	 * @return array
+	 */
+	protected function getClientOptions(array $servers)
+	{
+		return isset($servers['options']) ? (array) $servers['options'] : [];
 	}
 
 	/**
@@ -81,6 +98,29 @@ class Database {
 	public function command($method, array $parameters = array())
 	{
 		return call_user_func_array(array($this->clients['default'], $method), $parameters);
+	}
+
+	/**
+	 * Subscribe to a set of given channels for messages.
+	 *
+	 * @param  array|string  $channels
+	 * @param  \Closure  $callback
+	 * @param  string  $connection
+	 * @return void
+	 */
+	public function subscribe($channels, Closure $callback, $connection = null)
+	{
+		$loop = $this->connection($connection)->pubSubLoop();
+
+		call_user_func_array([$loop, 'subscribe'], (array) $channels);
+
+		foreach ($loop as $message) {
+			if ($message->kind === 'message') {
+				call_user_func($callback, $message->payload, $message->channel);
+			}
+		}
+
+		unset($loop);
 	}
 
 	/**

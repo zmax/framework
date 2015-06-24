@@ -2,54 +2,8 @@
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-
-if ( ! function_exists('action'))
-{
-	/**
-	 * Generate a URL to a controller action.
-	 *
-	 * @param  string  $name
-	 * @param  array   $parameters
-	 * @return string
-	 */
-	function action($name, $parameters = array())
-	{
-		return app('url')->action($name, $parameters);
-	}
-}
-
-if ( ! function_exists('app'))
-{
-	/**
-	 * Get the root Facade application instance.
-	 *
-	 * @param  string  $make
-	 * @return mixed
-	 */
-	function app($make = null)
-	{
-		if ( ! is_null($make))
-		{
-			return app()->make($make);
-		}
-
-		return Illuminate\Support\Facades\Facade::getFacadeApplication();
-	}
-}
-
-if ( ! function_exists('app_path'))
-{
-	/**
-	 * Get the path to the application folder.
-	 *
-	 * @param  string  $path
-	 * @return string
-	 */
-	function app_path($path = '')
-	{
-		return app('path').($path ? '/'.$path : $path);
-	}
-}
+use Illuminate\Support\Collection;
+use Illuminate\Support\Debug\Dumper;
 
 if ( ! function_exists('append_config'))
 {
@@ -98,13 +52,27 @@ if ( ! function_exists('array_build'))
 	/**
 	 * Build a new array using a callback.
 	 *
-	 * @param  array     $array
-	 * @param  \Closure  $callback
+	 * @param  array  $array
+	 * @param  callable  $callback
 	 * @return array
 	 */
-	function array_build($array, Closure $callback)
+	function array_build($array, callable $callback)
 	{
 		return Arr::build($array, $callback);
+	}
+}
+
+if ( ! function_exists('array_collapse'))
+{
+	/**
+	 * Collapse an array of arrays into a single array.
+	 *
+	 * @param  array|\ArrayAccess  $array
+	 * @return array
+	 */
+	function array_collapse($array)
+	{
+		return Arr::collapse($array);
 	}
 }
 
@@ -172,12 +140,12 @@ if ( ! function_exists('array_first'))
 	/**
 	 * Return the first element in an array passing a given truth test.
 	 *
-	 * @param  array     $array
-	 * @param  \Closure  $callback
-	 * @param  mixed     $default
+	 * @param  array  $array
+	 * @param  callable  $callback
+	 * @param  mixed  $default
 	 * @return mixed
 	 */
-	function array_first($array, $callback, $default = null)
+	function array_first($array, callable $callback, $default = null)
 	{
 		return Arr::first($array, $callback, $default);
 	}
@@ -188,9 +156,9 @@ if ( ! function_exists('array_last'))
 	/**
 	 * Return the last element in an array passing a given truth test.
 	 *
-	 * @param  array     $array
-	 * @param  \Closure  $callback
-	 * @param  mixed     $default
+	 * @param  array  $array
+	 * @param  callable  $callback
+	 * @param  mixed  $default
 	 * @return mixed
 	 */
 	function array_last($array, $callback, $default = null)
@@ -241,6 +209,21 @@ if ( ! function_exists('array_get'))
 	function array_get($array, $key, $default = null)
 	{
 		return Arr::get($array, $key, $default);
+	}
+}
+
+if ( ! function_exists('array_has'))
+{
+	/**
+	 * Check if an item exists in an array using "dot" notation.
+	 *
+	 * @param  array   $array
+	 * @param  string  $key
+	 * @return bool
+	 */
+	function array_has($array, $key)
+	{
+		return Arr::has($array, $key);
 	}
 }
 
@@ -312,13 +295,13 @@ if ( ! function_exists('array_set'))
 if ( ! function_exists('array_sort'))
 {
 	/**
-	 * Sort the array using the given Closure.
+	 * Sort the array using the given callback.
 	 *
-	 * @param  array     $array
-	 * @param  \Closure  $callback
+	 * @param  array  $array
+	 * @param  callable  $callback
 	 * @return array
 	 */
-	function array_sort($array, Closure $callback)
+	function array_sort($array, callable $callback)
 	{
 		return Arr::sort($array, $callback);
 	}
@@ -327,44 +310,15 @@ if ( ! function_exists('array_sort'))
 if ( ! function_exists('array_where'))
 {
 	/**
-	 * Filter the array using the given Closure.
+	 * Filter the array using the given callback.
 	 *
-	 * @param  array     $array
-	 * @param  \Closure  $callback
+	 * @param  array  $array
+	 * @param  callable  $callback
 	 * @return array
 	 */
-	function array_where($array, Closure $callback)
+	function array_where($array, callable $callback)
 	{
 		return Arr::where($array, $callback);
-	}
-}
-
-if ( ! function_exists('asset'))
-{
-	/**
-	 * Generate an asset path for the application.
-	 *
-	 * @param  string  $path
-	 * @param  bool    $secure
-	 * @return string
-	 */
-	function asset($path, $secure = null)
-	{
-		return app('url')->asset($path, $secure);
-	}
-}
-
-if ( ! function_exists('base_path'))
-{
-	/**
-	 * Get the path to the base of the install.
-	 *
-	 * @param  string  $path
-	 * @return string
-	 */
-	function base_path($path = '')
-	{
-		return app()->make('path.base').($path ? '/'.$path : $path);
 	}
 }
 
@@ -401,7 +355,7 @@ if ( ! function_exists('class_basename'))
 if ( ! function_exists('class_uses_recursive'))
 {
 	/**
-	 * Returns all traits used by a class, it's subclasses and trait of their traits
+	 * Returns all traits used by a class, its subclasses and trait of their traits.
 	 *
 	 * @param  string  $class
 	 * @return array
@@ -419,25 +373,17 @@ if ( ! function_exists('class_uses_recursive'))
 	}
 }
 
-if ( ! function_exists('csrf_token'))
+if ( ! function_exists('collect'))
 {
 	/**
-	 * Get the CSRF token value.
+	 * Create a collection from the given value.
 	 *
-	 * @return string
-	 *
-	 * @throws RuntimeException
+	 * @param  mixed  $value
+	 * @return \Illuminate\Support\Collection
 	 */
-	function csrf_token()
+	function collect($value = null)
 	{
-		$session = app('session');
-
-		if (isset($session))
-		{
-			return $session->getToken();
-		}
-
-		throw new RuntimeException("Application session store not set.");
+		return new Collection($value);
 	}
 }
 
@@ -460,6 +406,15 @@ if ( ! function_exists('data_get'))
 			if (is_array($target))
 			{
 				if ( ! array_key_exists($segment, $target))
+				{
+					return value($default);
+				}
+
+				$target = $target[$segment];
+			}
+			elseif ($target instanceof ArrayAccess)
+			{
+				if ( ! isset($target[$segment]))
 				{
 					return value($default);
 				}
@@ -495,7 +450,9 @@ if ( ! function_exists('dd'))
 	 */
 	function dd()
 	{
-		array_map(function($x) { var_dump($x); }, func_get_args()); die;
+		array_map(function($x) { (new Dumper)->dump($x); }, func_get_args());
+
+		die;
 	}
 }
 
@@ -542,23 +499,6 @@ if ( ! function_exists('head'))
 	}
 }
 
-if ( ! function_exists('link_to'))
-{
-	/**
-	 * Generate a HTML link.
-	 *
-	 * @param  string  $url
-	 * @param  string  $title
-	 * @param  array   $attributes
-	 * @param  bool    $secure
-	 * @return string
-	 */
-	function link_to($url, $title = null, $attributes = array(), $secure = null)
-	{
-		return app('html')->link($url, $title, $attributes, $secure);
-	}
-}
-
 if ( ! function_exists('last'))
 {
 	/**
@@ -570,57 +510,6 @@ if ( ! function_exists('last'))
 	function last($array)
 	{
 		return end($array);
-	}
-}
-
-if ( ! function_exists('link_to_asset'))
-{
-	/**
-	 * Generate a HTML link to an asset.
-	 *
-	 * @param  string  $url
-	 * @param  string  $title
-	 * @param  array   $attributes
-	 * @param  bool    $secure
-	 * @return string
-	 */
-	function link_to_asset($url, $title = null, $attributes = array(), $secure = null)
-	{
-		return app('html')->linkAsset($url, $title, $attributes, $secure);
-	}
-}
-
-if ( ! function_exists('link_to_route'))
-{
-	/**
-	 * Generate a HTML link to a named route.
-	 *
-	 * @param  string  $name
-	 * @param  string  $title
-	 * @param  array   $parameters
-	 * @param  array   $attributes
-	 * @return string
-	 */
-	function link_to_route($name, $title = null, $parameters = array(), $attributes = array())
-	{
-		return app('html')->linkRoute($name, $title, $parameters, $attributes);
-	}
-}
-
-if ( ! function_exists('link_to_action'))
-{
-	/**
-	 * Generate a HTML link to a controller action.
-	 *
-	 * @param  string  $action
-	 * @param  string  $title
-	 * @param  array   $parameters
-	 * @param  array   $attributes
-	 * @return string
-	 */
-	function link_to_action($action, $title = null, $parameters = array(), $attributes = array())
-	{
-		return app('html')->linkAction($action, $title, $parameters, $attributes);
 	}
 }
 
@@ -666,69 +555,12 @@ if ( ! function_exists('preg_replace_sub'))
 	{
 		return preg_replace_callback($pattern, function($match) use (&$replacements)
 		{
-			return array_shift($replacements);
+			foreach ($replacements as $key => $value)
+			{
+				return array_shift($replacements);
+			}
 
 		}, $subject);
-	}
-}
-
-if ( ! function_exists('public_path'))
-{
-	/**
-	 * Get the path to the public folder.
-	 *
-	 * @param  string  $path
-	 * @return string
-	 */
-	function public_path($path = '')
-	{
-		return app()->make('path.public').($path ? '/'.$path : $path);
-	}
-}
-
-if ( ! function_exists('route'))
-{
-	/**
-	 * Generate a URL to a named route.
-	 *
-	 * @param  string  $name
-	 * @param  array   $parameters
-	 * @param  bool  $absolute
-	 * @param  \Illuminate\Routing\Route $route
-	 * @return string
-	 */
-	function route($name, $parameters = array(), $absolute = true, $route = null)
-	{
-		return app('url')->route($name, $parameters, $absolute, $route);
-	}
-}
-
-if ( ! function_exists('secure_asset'))
-{
-	/**
-	 * Generate an asset path for the application.
-	 *
-	 * @param  string  $path
-	 * @return string
-	 */
-	function secure_asset($path)
-	{
-		return asset($path, true);
-	}
-}
-
-if ( ! function_exists('secure_url'))
-{
-	/**
-	 * Generate a HTTPS url for the application.
-	 *
-	 * @param  string  $path
-	 * @param  mixed   $parameters
-	 * @return string
-	 */
-	function secure_url($path, $parameters = array())
-	{
-		return url($path, $parameters, true);
 	}
 }
 
@@ -759,20 +591,6 @@ if ( ! function_exists('starts_with'))
 	function starts_with($haystack, $needles)
 	{
 		return Str::startsWith($haystack, $needles);
-	}
-}
-
-if ( ! function_exists('storage_path'))
-{
-	/**
-	 * Get the path to the storage folder.
-	 *
-	 * @param   string  $path
-	 * @return  string
-	 */
-	function storage_path($path = '')
-	{
-		return app('path.storage').($path ? '/'.$path : $path);
 	}
 }
 
@@ -903,6 +721,21 @@ if ( ! function_exists('str_singular'))
 	}
 }
 
+if ( ! function_exists('str_slug'))
+{
+	/**
+	 * Generate a URL friendly "slug" from a given string.
+	 *
+	 * @param  string  $title
+	 * @param  string  $separator
+	 * @return string
+	 */
+	function str_slug($title, $separator = '-')
+	{
+		return Str::slug($title, $separator);
+	}
+}
+
 if ( ! function_exists('studly_case'))
 {
 	/**
@@ -920,7 +753,7 @@ if ( ! function_exists('studly_case'))
 if ( ! function_exists('trait_uses_recursive'))
 {
 	/**
-	 * Returns all traits used by a trait and its traits
+	 * Returns all traits used by a trait and its traits.
 	 *
 	 * @param  string  $trait
 	 * @return array
@@ -935,57 +768,6 @@ if ( ! function_exists('trait_uses_recursive'))
 		}
 
 		return $traits;
-	}
-}
-
-if ( ! function_exists('trans'))
-{
-	/**
-	 * Translate the given message.
-	 *
-	 * @param  string  $id
-	 * @param  array   $parameters
-	 * @param  string  $domain
-	 * @param  string  $locale
-	 * @return string
-	 */
-	function trans($id, $parameters = array(), $domain = 'messages', $locale = null)
-	{
-		return app('translator')->trans($id, $parameters, $domain, $locale);
-	}
-}
-
-if ( ! function_exists('trans_choice'))
-{
-	/**
-	 * Translates the given message based on a count.
-	 *
-	 * @param  string  $id
-	 * @param  int     $number
-	 * @param  array   $parameters
-	 * @param  string  $domain
-	 * @param  string  $locale
-	 * @return string
-	 */
-	function trans_choice($id, $number, array $parameters = array(), $domain = 'messages', $locale = null)
-	{
-		return app('translator')->transChoice($id, $number, $parameters, $domain, $locale);
-	}
-}
-
-if ( ! function_exists('url'))
-{
-	/**
-	 * Generate a url for the application.
-	 *
-	 * @param  string  $path
-	 * @param  mixed   $parameters
-	 * @param  bool    $secure
-	 * @return string
-	 */
-	function url($path = null, $parameters = array(), $secure = null)
-	{
-		return app('url')->to($path, $parameters, $secure);
 	}
 }
 

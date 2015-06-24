@@ -337,6 +337,13 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(1, count($statements));
 		$this->assertEquals('alter table `users` add `foo` mediumint not null', $statements[0]);
+
+		$blueprint = new Blueprint('users');
+		$blueprint->mediumInteger('foo', true);
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` mediumint not null auto_increment primary key', $statements[0]);
 	}
 
 
@@ -348,6 +355,13 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(1, count($statements));
 		$this->assertEquals('alter table `users` add `foo` smallint not null', $statements[0]);
+
+		$blueprint = new Blueprint('users');
+		$blueprint->smallInteger('foo', true);
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` smallint not null auto_increment primary key', $statements[0]);
 	}
 
 
@@ -359,6 +373,13 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertEquals(1, count($statements));
 		$this->assertEquals('alter table `users` add `foo` tinyint not null', $statements[0]);
+
+		$blueprint = new Blueprint('users');
+		$blueprint->tinyInteger('foo', true);
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` tinyint not null auto_increment primary key', $statements[0]);
 	}
 
 
@@ -369,7 +390,7 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
 
 		$this->assertEquals(1, count($statements));
-		$this->assertEquals('alter table `users` add `foo` float(5, 2) not null', $statements[0]);
+		$this->assertEquals('alter table `users` add `foo` double(5, 2) not null', $statements[0]);
 	}
 
 
@@ -428,6 +449,28 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 	}
 
 
+	public function testAddingJson()
+	{
+		$blueprint = new Blueprint('users');
+		$blueprint->json('foo');
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` text not null', $statements[0]);
+	}
+
+
+	public function testAddingJsonb()
+	{
+		$blueprint = new Blueprint('users');
+		$blueprint->jsonb('foo');
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` text not null', $statements[0]);
+	}
+
+
 	public function testAddingDate()
 	{
 		$blueprint = new Blueprint('users');
@@ -449,6 +492,16 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals('alter table `users` add `foo` datetime not null', $statements[0]);
 	}
 
+	public function testAddingDateTimeTz()
+	{
+		$blueprint = new Blueprint('users');
+		$blueprint->dateTimeTz('foo');
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` datetime not null', $statements[0]);
+	}
+
 
 	public function testAddingTime()
 	{
@@ -460,6 +513,15 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals('alter table `users` add `foo` time not null', $statements[0]);
 	}
 
+	public function testAddingTimeTz()
+	{
+		$blueprint = new Blueprint('users');
+		$blueprint->timeTz('foo');
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` time not null', $statements[0]);
+	}
 
 	public function testAddingTimeStamp()
 	{
@@ -471,6 +533,15 @@ class DatabaseMySqlSchemaGrammarTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals('alter table `users` add `foo` timestamp default 0 not null', $statements[0]);
 	}
 
+	public function testAddingTimeStampTz()
+	{
+		$blueprint = new Blueprint('users');
+		$blueprint->timestampTz('foo');
+		$statements = $blueprint->toSql($this->getConnection(), $this->getGrammar());
+
+		$this->assertEquals(1, count($statements));
+		$this->assertEquals('alter table `users` add `foo` timestamp default 0 not null', $statements[0]);
+	}
 
 	public function testAddingTimeStamps()
 	{
