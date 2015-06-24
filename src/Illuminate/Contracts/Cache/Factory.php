@@ -1,13 +1,14 @@
-<?php namespace Illuminate\Contracts\Cache;
+<?php
 
-interface Factory {
+namespace Illuminate\Contracts\Cache;
 
-	/**
-	 * Get a cache driver instance.
-	 *
-	 * @param  string  $driver
-	 * @return mixed
-	 */
-	public function driver($driver = null);
-
+interface Factory
+{
+    /**
+     * Get a cache store instance by name.
+     *
+     * @param  string|null  $name
+     * @return mixed
+     */
+    public function store($name = null);
 }

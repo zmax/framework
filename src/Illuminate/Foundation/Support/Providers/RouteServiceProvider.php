@@ -1,150 +1,111 @@
-<?php namespace Illuminate\Foundation\Support\Providers;
+<?php
 
-use Closure;
+namespace Illuminate\Foundation\Support\Providers;
+
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Routing\Annotations\Scanner;
 
-class RouteServiceProvider extends ServiceProvider {
+class RouteServiceProvider extends ServiceProvider
+{
+    /**
+     * The controller namespace for the application.
+     *
+     * @var string|null
+     */
+    protected $namespace;
 
-	/**
-	 * The controllers to scan for route annotations.
-	 *
-	 * @var array
-	 */
-	protected $scan = [];
+    /**
+     * Bootstrap any application services.
+     *
+     * @param  \Illuminate\Routing\Router  $router
+     * @return void
+     */
+    public function boot(Router $router)
+    {
+        $this->setRootControllerNamespace();
 
-	/**
-	 * Determines if we will auto-scan in the local environment.
-	 *
-	 * @var bool
-	 */
-	protected $scanWhenLocal = true;
+        if ($this->app->routesAreCached()) {
+            $this->loadCachedRoutes();
+        } else {
+            $this->loadRoutes();
+        }
+    }
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function boot()
-	{
-		$this->addMiddleware();
+    /**
+     * Set the root controller namespace for the application.
+     *
+     * @return void
+     */
+    protected function setRootControllerNamespace()
+    {
+        if (is_null($this->namespace)) {
+            return;
+        }
 
-		$this->app->call([$this, 'before']);
+        $this->app['Illuminate\Contracts\Routing\UrlGenerator']
+                        ->setRootControllerNamespace($this->namespace);
+    }
 
-		if ($this->app->routesAreCached())
-		{
-			$this->loadCachedRoutes();
-		}
-		else
-		{
-			$this->loadRoutes();
-		}
-	}
+    /**
+     * Load the cached routes for the application.
+     *
+     * @return void
+     */
+    protected function loadCachedRoutes()
+    {
+        $this->app->booted(function () {
+            require $this->app->getCachedRoutesPath();
+        });
+    }
 
-	/**
-	 * Add the short-hand middleware names to the router.
-	 *
-	 * @return void
-	 */
-	protected function addMiddleware()
-	{
-		$router = $this->app['router'];
+    /**
+     * Load the application routes.
+     *
+     * @return void
+     */
+    protected function loadRoutes()
+    {
+        $this->app->call([$this, 'map']);
+    }
 
-		foreach ($this->middleware as $key => $value)
-		{
-			$router->middleware($key, $value);
-		}
-	}
+    /**
+     * Load the standard routes file for the application.
+     *
+     * @param  string  $path
+     * @return void
+     */
+    protected function loadRoutesFrom($path)
+    {
+        $router = $this->app['Illuminate\Routing\Router'];
 
-	/**
-	 * Load the cached routes for the application.
-	 *
-	 * @return void
-	 */
-	protected function loadCachedRoutes()
-	{
-		$this->app->booted(function()
-		{
-			require $this->app->getCachedRoutesPath();
-		});
-	}
+        if (is_null($this->namespace)) {
+            return require $path;
+        }
 
-	/**
-	 * Load the application routes.
-	 *
-	 * @return void
-	 */
-	protected function loadRoutes()
-	{
-		if ($this->app->environment('local') && $this->scanWhenLocal)
-		{
-			$this->scanRoutes();
-		}
+        $router->group(['namespace' => $this->namespace], function ($router) use ($path) {
+            require $path;
+        });
+    }
 
-		if ( ! empty($this->scan) && $this->app->routesAreScanned())
-		{
-			$this->loadScannedRoutes();
-		}
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
 
-		$this->app->call([$this, 'map']);
-	}
-
-	/**
-	 * Scan the routes and write the scanned routes file.
-	 *
-	 * @return void
-	 */
-	protected function scanRoutes()
-	{
-		if (empty($this->scan)) return;
-
-		$scanner = new Scanner($this->scan);
-
-		file_put_contents($this->app->getScannedRoutesPath(), '<?php '.$scanner->getRouteDefinitions());
-	}
-
-	/**
-	 * Load the scanned application routes.
-	 *
-	 * @return void
-	 */
-	protected function loadScannedRoutes()
-	{
-		$this->app->booted(function()
-		{
-			$router = app('Illuminate\Contracts\Routing\Registrar');
-
-			require $this->app->getScannedRoutesPath();
-		});
-	}
-
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function register() {}
-
-	/**
-	 * Get the classes to be scanned by the provider.
-	 *
-	 * @return array
-	 */
-	public function scans()
-	{
-		return $this->scan;
-	}
-
-	/**
-	 * Pass dynamic methods onto the router instance.
-	 *
-	 * @param  string  $method
-	 * @param  array  $parameters
-	 * @return mixed
-	 */
-	public function __call($method, $parameters)
-	{
-		return call_user_func_array([$this->app['router'], $method], $parameters);
-	}
-
+    /**
+     * Pass dynamic methods onto the router instance.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        return call_user_func_array([$this->app['router'], $method], $parameters);
+    }
 }

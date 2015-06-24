@@ -1,96 +1,60 @@
-<?php namespace Illuminate\Foundation\Support\Providers;
+<?php
+
+namespace Illuminate\Foundation\Support\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Events\Annotations\Scanner;
 use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
 
-class EventServiceProvider extends ServiceProvider {
+class EventServiceProvider extends ServiceProvider
+{
+    /**
+     * The event handler mappings for the application.
+     *
+     * @var array
+     */
+    protected $listen = [];
 
-	/**
-	 * The classes to scan for event annotations.
-	 *
-	 * @var array
-	 */
-	protected $scan = [];
+    /**
+     * The subscriber classes to register.
+     *
+     * @var array
+     */
+    protected $subscribe = [];
 
-	/**
-	 * Determines if we will auto-scan in the local environment.
-	 *
-	 * @var bool
-	 */
-	protected $scanWhenLocal = true;
+    /**
+     * Register the application's event listeners.
+     *
+     * @param  \Illuminate\Contracts\Events\Dispatcher  $events
+     * @return void
+     */
+    public function boot(DispatcherContract $events)
+    {
+        foreach ($this->listen as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                $events->listen($event, $listener);
+            }
+        }
 
-	/**
-	 * Register the application's event listeners.
-	 *
-	 * @param  \Illuminate\Contracts\Events\Dispatcher  $events
-	 * @return void
-	 */
-	public function boot(DispatcherContract $events)
-	{
-		if ($this->app->environment('local') && $this->scanWhenLocal)
-		{
-			$this->scanEvents();
-		}
+        foreach ($this->subscribe as $subscriber) {
+            $events->subscribe($subscriber);
+        }
+    }
 
-		if ( ! empty($this->scan) && $this->app->eventsAreScanned())
-		{
-			$this->loadScannedEvents();
-		}
+    /**
+     * {@inheritdoc}
+     */
+    public function register()
+    {
+        //
+    }
 
-		foreach ($this->listen as $event => $listeners)
-		{
-			foreach ($listeners as $listener)
-			{
-				$events->listen($event, $listener);
-			}
-		}
-	}
-
-	/**
-	 * Load the scanned events for the application.
-	 *
-	 * @return void
-	 */
-	protected function loadScannedEvents()
-	{
-		$events = app('Illuminate\Contracts\Events\Dispatcher');
-
-		require $this->app->getScannedEventsPath();
-	}
-
-	/**
-	 * Scan the events for the application.
-	 *
-	 * @return void
-	 */
-	protected function scanEvents()
-	{
-		if (empty($this->scan)) return;
-
-		$scanner = new Scanner($this->scan);
-
-		file_put_contents(
-			$this->app->getScannedEventsPath(), '<?php '.$scanner->getEventDefinitions()
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function register()
-	{
-		//
-	}
-
-	/**
-	 * Get the classes to be scanned by the provider.
-	 *
-	 * @return array
-	 */
-	public function scans()
-	{
-		return $this->scan;
-	}
-
+    /**
+     * Get the events and handlers.
+     *
+     * @return array
+     */
+    public function listens()
+    {
+        return $this->listen;
+    }
 }

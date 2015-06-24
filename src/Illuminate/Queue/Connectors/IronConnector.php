@@ -1,59 +1,51 @@
-<?php namespace Illuminate\Queue\Connectors;
+<?php
 
-use IronMQ;
-use Illuminate\Http\Request;
+namespace Illuminate\Queue\Connectors;
+
+use IronMQ\IronMQ;
 use Illuminate\Queue\IronQueue;
 use Illuminate\Contracts\Encryption\Encrypter as EncrypterContract;
 
-class IronConnector implements ConnectorInterface {
+class IronConnector implements ConnectorInterface
+{
+    /**
+     * The encrypter instance.
+     *
+     * @var \Illuminate\Encryption\Encrypter
+     */
+    protected $crypt;
 
-	/**
-	 * The encrypter instance.
-	 *
-	 * @var \Illuminate\Encryption\Encrypter
-	 */
-	protected $crypt;
+    /**
+     * Create a new Iron connector instance.
+     *
+     * @param  \Illuminate\Contracts\Encryption\Encrypter  $crypt
+     * @return void
+     */
+    public function __construct(EncrypterContract $crypt)
+    {
+        $this->crypt = $crypt;
+    }
 
-	/**
-	 * The current request instance.
-	 *
-	 * @var \Illuminate\Http\Request
-	 */
-	protected $request;
+    /**
+     * Establish a queue connection.
+     *
+     * @param  array  $config
+     * @return \Illuminate\Contracts\Queue\Queue
+     */
+    public function connect(array $config)
+    {
+        $ironConfig = ['token' => $config['token'], 'project_id' => $config['project']];
 
-	/**
-	 * Create a new Iron connector instance.
-	 *
-	 * @param  \Illuminate\Contracts\Encryption\Encrypter  $crypt
-	 * @param  \Illuminate\Http\Request  $request
-	 * @return void
-	 */
-	public function __construct(EncrypterContract $crypt, Request $request)
-	{
-		$this->crypt = $crypt;
-		$this->request = $request;
-	}
+        if (isset($config['host'])) {
+            $ironConfig['host'] = $config['host'];
+        }
 
-	/**
-	 * Establish a queue connection.
-	 *
-	 * @param  array  $config
-	 * @return \Illuminate\Contracts\Queue\Queue
-	 */
-	public function connect(array $config)
-	{
-		$ironConfig = array('token' => $config['token'], 'project_id' => $config['project']);
+        $iron = new IronMQ($ironConfig);
 
-		if (isset($config['host'])) $ironConfig['host'] = $config['host'];
+        if (isset($config['ssl_verifypeer'])) {
+            $iron->ssl_verifypeer = $config['ssl_verifypeer'];
+        }
 
-		$iron = new IronMQ($ironConfig);
-
-		if (isset($config['ssl_verifypeer']))
-		{
-			$iron->ssl_verifypeer = $config['ssl_verifypeer'];
-		}
-
-		return new IronQueue($iron, $this->request, $config['queue'], $config['encrypt']);
-	}
-
+        return new IronQueue($iron, $config['queue'], $config['encrypt']);
+    }
 }

@@ -1,199 +1,236 @@
-<?php namespace Illuminate\Support;
+<?php
 
-use ReflectionClass;
+namespace Illuminate\Support;
 
-abstract class ServiceProvider {
+use BadMethodCallException;
 
-	/**
-	 * The application instance.
-	 *
-	 * @var \Illuminate\Contracts\Foundation\Application
-	 */
-	protected $app;
+abstract class ServiceProvider
+{
+    /**
+     * The application instance.
+     *
+     * @var \Illuminate\Contracts\Foundation\Application
+     */
+    protected $app;
 
-	/**
-	 * Indicates if loading of the provider is deferred.
-	 *
-	 * @var bool
-	 */
-	protected $defer = false;
+    /**
+     * Indicates if loading of the provider is deferred.
+     *
+     * @var bool
+     */
+    protected $defer = false;
 
-	/**
-	 * Create a new service provider instance.
-	 *
-	 * @param  \Illuminate\Contracts\Foundation\Application  $app
-	 * @return void
-	 */
-	public function __construct($app)
-	{
-		$this->app = $app;
-	}
+    /**
+     * The paths that should be published.
+     *
+     * @var array
+     */
+    protected static $publishes = [];
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	abstract public function register();
+    /**
+     * The paths that should be published by group.
+     *
+     * @var array
+     */
+    protected static $publishGroups = [];
 
-	/**
-	 * Register the package's component namespaces.
-	 *
-	 * @param  string  $package
-	 * @param  string  $namespace
-	 * @param  string  $path
-	 * @return void
-	 */
-	public function package($package, $namespace = null, $path = null)
-	{
-		$namespace = $this->getPackageNamespace($package, $namespace);
+    /**
+     * Create a new service provider instance.
+     *
+     * @param  \Illuminate\Contracts\Foundation\Application  $app
+     * @return void
+     */
+    public function __construct($app)
+    {
+        $this->app = $app;
+    }
 
-		// In this method we will register the configuration package for the package
-		// so that the configuration options cleanly cascade into the application
-		// folder to make the developers lives much easier in maintaining them.
-		$path = $path ?: $this->guessPackagePath();
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    abstract public function register();
 
-		$config = $path.'/config';
+    /**
+     * Merge the given configuration with the existing configuration.
+     *
+     * @param  string  $path
+     * @param  string  $key
+     * @return void
+     */
+    protected function mergeConfigFrom($path, $key)
+    {
+        $config = $this->app['config']->get($key, []);
 
-		if ($this->app['files']->isDirectory($config))
-		{
-			$this->app['config']->package($package, $config, $namespace);
-		}
+        $this->app['config']->set($key, array_merge(require $path, $config));
+    }
 
-		// Next we will check for any "language" components. If language files exist
-		// we will register them with this given package's namespace so that they
-		// may be accessed using the translation facilities of the application.
-		$lang = $path.'/lang';
+    /**
+     * Register a view file namespace.
+     *
+     * @param  string  $path
+     * @param  string  $namespace
+     * @return void
+     */
+    protected function loadViewsFrom($path, $namespace)
+    {
+        if (is_dir($appPath = $this->app->basePath().'/resources/views/vendor/'.$namespace)) {
+            $this->app['view']->addNamespace($namespace, $appPath);
+        }
 
-		if ($this->app['files']->isDirectory($lang))
-		{
-			$this->app['translator']->addNamespace($namespace, $lang);
-		}
+        $this->app['view']->addNamespace($namespace, $path);
+    }
 
-		// Next, we will see if the application view folder contains a folder for the
-		// package and namespace. If it does, we'll give that folder precedence on
-		// the loader list for the views so the package views can be overridden.
-		$appView = $this->getAppViewPath($package);
+    /**
+     * Register a translation file namespace.
+     *
+     * @param  string  $path
+     * @param  string  $namespace
+     * @return void
+     */
+    protected function loadTranslationsFrom($path, $namespace)
+    {
+        $this->app['translator']->addNamespace($namespace, $path);
+    }
 
-		if ($this->app['files']->isDirectory($appView))
-		{
-			$this->app['view']->addNamespace($namespace, $appView);
-		}
+    /**
+     * Register paths to be published by the publish command.
+     *
+     * @param  array  $paths
+     * @param  string  $group
+     * @return void
+     */
+    protected function publishes(array $paths, $group = null)
+    {
+        $class = get_class($this);
 
-		// Finally we will register the view namespace so that we can access each of
-		// the views available in this package. We use a standard convention when
-		// registering the paths to every package's views and other components.
-		$view = $path.'/views';
+        if (!array_key_exists($class, static::$publishes)) {
+            static::$publishes[$class] = [];
+        }
 
-		if ($this->app['files']->isDirectory($view))
-		{
-			$this->app['view']->addNamespace($namespace, $view);
-		}
-	}
+        static::$publishes[$class] = array_merge(static::$publishes[$class], $paths);
 
-	/**
-	 * Guess the package path for the provider.
-	 *
-	 * @return string
-	 */
-	public function guessPackagePath()
-	{
-		$path = (new ReflectionClass($this))->getFileName();
+        if ($group) {
+            if (!array_key_exists($group, static::$publishGroups)) {
+                static::$publishGroups[$group] = [];
+            }
 
-		return realpath(dirname($path).'/../../');
-	}
+            static::$publishGroups[$group] = array_merge(static::$publishGroups[$group], $paths);
+        }
+    }
 
-	/**
-	 * Determine the namespace for a package.
-	 *
-	 * @param  string  $package
-	 * @param  string  $namespace
-	 * @return string
-	 */
-	protected function getPackageNamespace($package, $namespace)
-	{
-		if (is_null($namespace))
-		{
-			list($vendor, $namespace) = explode('/', $package);
-		}
+    /**
+     * Get the paths to publish.
+     *
+     * @param  string  $provider
+     * @param  string  $group
+     * @return array
+     */
+    public static function pathsToPublish($provider = null, $group = null)
+    {
+        if ($provider && $group) {
+            if (empty(static::$publishes[$provider]) || empty(static::$publishGroups[$group])) {
+                return [];
+            }
 
-		return $namespace;
-	}
+            return array_intersect(static::$publishes[$provider], static::$publishGroups[$group]);
+        }
 
-	/**
-	 * Register the package's custom Artisan commands.
-	 *
-	 * @param  array  $commands
-	 * @return void
-	 */
-	public function commands($commands)
-	{
-		$commands = is_array($commands) ? $commands : func_get_args();
+        if ($group && array_key_exists($group, static::$publishGroups)) {
+            return static::$publishGroups[$group];
+        }
 
-		// To register the commands with Artisan, we will grab each of the arguments
-		// passed into the method and listen for Artisan "start" event which will
-		// give us the Artisan console instance which we will give commands to.
-		$events = $this->app['events'];
+        if ($provider && array_key_exists($provider, static::$publishes)) {
+            return static::$publishes[$provider];
+        }
 
-		$events->listen('artisan.start', function($artisan) use ($commands)
-		{
-			$artisan->resolveCommands($commands);
-		});
-	}
+        if ($group || $provider) {
+            return [];
+        }
 
-	/**
-	 * Get the application package view path.
-	 *
-	 * @param  string  $package
-	 * @return string
-	 */
-	protected function getAppViewPath($package)
-	{
-		return $this->app['path.base']."/resources/views/packages/{$package}";
-	}
+        $paths = [];
 
-	/**
-	 * Get the services provided by the provider.
-	 *
-	 * @return array
-	 */
-	public function provides()
-	{
-		return array();
-	}
+        foreach (static::$publishes as $class => $publish) {
+            $paths = array_merge($paths, $publish);
+        }
 
-	/**
-	 * Determine if the provider is deferred.
-	 *
-	 * @return bool
-	 */
-	public function isDeferred()
-	{
-		return $this->defer;
-	}
+        return $paths;
+    }
 
-	/**
-	 * Get a list of files that should be compiled for the package.
-	 *
-	 * @return array
-	 */
-	public static function compiles()
-	{
-		return [];
-	}
+    /**
+     * Register the package's custom Artisan commands.
+     *
+     * @param  array  $commands
+     * @return void
+     */
+    public function commands($commands)
+    {
+        $commands = is_array($commands) ? $commands : func_get_args();
 
-	/**
-	 * Dynamically handle missing method calls.
-	 *
-	 * @param  string  $method
-	 * @param  array  $parameters
-	 * @return mixed
-	 */
-	public function __call($method, $parameters)
-	{
-		if ($method == 'boot') return;
+        // To register the commands with Artisan, we will grab each of the arguments
+        // passed into the method and listen for Artisan "start" event which will
+        // give us the Artisan console instance which we will give commands to.
+        $events = $this->app['events'];
 
-		throw new \BadMethodCallException("Call to undefined method [{$method}]");
-	}
+        $events->listen('artisan.start', function ($artisan) use ($commands) {
+            $artisan->resolveCommands($commands);
+        });
+    }
 
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [];
+    }
+
+    /**
+     * Get the events that trigger this service provider to register.
+     *
+     * @return array
+     */
+    public function when()
+    {
+        return [];
+    }
+
+    /**
+     * Determine if the provider is deferred.
+     *
+     * @return bool
+     */
+    public function isDeferred()
+    {
+        return $this->defer;
+    }
+
+    /**
+     * Get a list of files that should be compiled for the package.
+     *
+     * @return array
+     */
+    public static function compiles()
+    {
+        return [];
+    }
+
+    /**
+     * Dynamically handle missing method calls.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        if ($method == 'boot') {
+            return;
+        }
+
+        throw new BadMethodCallException("Call to undefined method [{$method}]");
+    }
 }

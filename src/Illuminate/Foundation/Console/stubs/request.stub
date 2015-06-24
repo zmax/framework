@@ -1,29 +1,30 @@
-<?php namespace {{namespace}};
+<?php
 
-use Illuminate\Foundation\Http\FormRequest;
+namespace DummyNamespace;
 
-class {{class}} extends FormRequest {
+use DummyRootNamespaceHttp\Requests\Request;
 
-	/**
-	 * Get the validation rules that apply to the request.
-	 *
-	 * @return array
-	 */
-	public function rules()
-	{
-		return [
-			//
-		];
-	}
+class DummyClass extends Request
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        return false;
+    }
 
-	/**
-	 * Determine if the user is authorized to make this request.
-	 *
-	 * @return bool
-	 */
-	public function authorize()
-	{
-		return false;
-	}
-
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules()
+    {
+        return [
+            //
+        ];
+    }
 }

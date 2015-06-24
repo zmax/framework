@@ -12,14 +12,14 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 $capsule = new Capsule;
 
 $capsule->addConnection([
-	'driver'    => 'mysql',
-	'host'      => 'localhost',
-	'database'  => 'database',
-	'username'  => 'root',
-	'password'  => 'password',
-	'charset'   => 'utf8',
-	'collation' => 'utf8_unicode_ci',
-	'prefix'    => '',
+    'driver'    => 'mysql',
+    'host'      => 'localhost',
+    'database'  => 'database',
+    'username'  => 'root',
+    'password'  => 'password',
+    'charset'   => 'utf8',
+    'collation' => 'utf8_unicode_ci',
+    'prefix'    => '',
 ]);
 
 // Set the event dispatcher used by Eloquent models... (optional)
@@ -33,6 +33,8 @@ $capsule->setAsGlobal();
 // Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
 $capsule->bootEloquent();
 ```
+
+> `composer require "illuminate/events"` required when you need to use observers with Eloquent.
 
 Once the Capsule instance has been registered. You may use it like so:
 
@@ -51,9 +53,9 @@ $results = Capsule::select('select * from users where id = ?', array(1));
 ```PHP
 Capsule::schema()->create('users', function($table)
 {
-	$table->increments('id');
-	$table->string('email')->unique();
-	$table->timestamps();
+    $table->increments('id');
+    $table->string('email')->unique();
+    $table->timestamps();
 });
 ```
 

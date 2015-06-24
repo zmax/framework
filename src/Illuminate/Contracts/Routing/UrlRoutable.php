@@ -1,7 +1,9 @@
-<?php namespace Illuminate\Contracts\Routing;
+<?php
 
-interface UrlRoutable {
+namespace Illuminate\Contracts\Routing;
 
+interface UrlRoutable
+{
     /**
      * Get the value of the model's route key.
      *
@@ -15,5 +17,4 @@ interface UrlRoutable {
      * @return string
      */
     public function getRouteKeyName();
-
 }
